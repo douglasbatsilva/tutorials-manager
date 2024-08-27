@@ -1,17 +1,18 @@
-import { Controller, Get } from '@nestjs/common';
-import { CacheDBService } from 'src/infra/cache/cache.service';
+import { Body, Controller, Post } from '@nestjs/common';
+import { UserService } from './user.service';
+import { UserRegisterDTO } from './dto/user.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly cacheService: CacheDBService) {}
+  constructor(private readonly userService: UserService) {}
 
-  @Get('')
-  async getUser() {
-    return this.cacheService.set('user', { name: 'Douglas' });
+  @Post('signup')
+  async create(@Body() body: UserRegisterDTO) {
+    return this.userService.create(body);
   }
 
-  @Get('/test')
-  async getTest() {
-    return this.cacheService.get('user');
+  @Post('login')
+  async login(@Body() body: Partial<UserRegisterDTO>) {
+    return this.userService.login(body);
   }
 }
