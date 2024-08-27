@@ -5,6 +5,7 @@ import { UserRepository } from 'src/infra/database/user.repository';
 import { UserDTO } from './dto/user.dto';
 import { diacriticSensitiveRegex } from 'src/utils/utils';
 import { JwtService } from '@nestjs/jwt';
+import { Users } from 'src/infra/database/entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -17,10 +18,8 @@ export class UserService {
     const userData = await this.findByEmailOrName(body.email, body.userName);
 
     if (userData?.length > 0) {
-      throw new HttpException(
-        'User already exists',
-        HttpStatus.PRECONDITION_FAILED,
-      );
+      const statusCode = HttpStatus.PRECONDITION_FAILED;
+      throw new HttpException('User already exists', statusCode);
     }
 
     const user = this.buildUserData(body);
@@ -28,8 +27,7 @@ export class UserService {
     this.repository.create(user);
   }
 
-  async findByEmailOrName(email: string, userName: string): Promise<any> {
-    const userEmail = email?.toLocaleLowerCase();
+  async findByEmailOrName(email: string, userName: string): Promise<Users[]> {
     const name = diacriticSensitiveRegex(userName);
 
     // Buscar por Regex acaba com a performance da busca.
@@ -39,7 +37,7 @@ export class UserService {
     // A melhor saída, em produção, é salvar tudo sem acentos e lowercase
     const query = {
       $or: [
-        { email: userEmail },
+        { email: email?.toLocaleLowerCase() },
         { userName: { $regex: name, $options: 'i' } },
       ],
     };

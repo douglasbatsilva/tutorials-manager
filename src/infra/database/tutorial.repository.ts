@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, UpdateWriteOpResult } from 'mongoose';
 import { Tutorials } from './entities/tutorial.entity';
 import { TutorialDTO } from 'src/tutorial/dto/tutorial.dto';
+import { FindResult } from './tutorial.interface';
 
 @Injectable()
 export class TutorialRepository {
@@ -11,7 +12,7 @@ export class TutorialRepository {
     private repository: Model<Tutorials>,
   ) {}
 
-  async find(query: any = {}): Promise<any | null> {
+  async find(query: any = {}): Promise<FindResult | null> {
     const { skip = 0, pageSize = 10 } = query?.metadata ?? {};
 
     const match = { deleted: { $ne: true }, ...(query?.match || {}) };

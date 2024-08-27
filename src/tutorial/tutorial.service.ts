@@ -1,6 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { TutorialRepository } from 'src/infra/database/tutorial.repository';
-import { TutorialDTO, TutorialRegisterDTO } from './dto/tutorial.dto';
+import {
+  TutorialDTO,
+  TutorialQuery,
+  TutorialRegisterDTO,
+} from './dto/tutorial.dto';
 import { createHash, randomUUID } from 'crypto';
 import { CacheDBService } from 'src/infra/cache/cache.service';
 
@@ -11,7 +15,7 @@ export class TutorialService {
     private readonly cacheService: CacheDBService,
   ) {}
 
-  async findAll(body: Partial<any> = {}) {
+  async findAll(body: TutorialQuery) {
     const query = this.buildQuery(body);
 
     const hash = createHash('md5').update(JSON.stringify(query)).digest('hex');
@@ -21,8 +25,8 @@ export class TutorialService {
     );
   }
 
-  buildQuery(body: Partial<any> = {}) {
-    const { title, createdAt, updatedAt, days } = body;
+  buildQuery(body?: TutorialQuery) {
+    const { title, createdAt, updatedAt, days } = body ?? {};
 
     const query: any = {};
 

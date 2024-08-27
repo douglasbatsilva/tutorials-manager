@@ -9,15 +9,14 @@ import {
   Delete,
 } from '@nestjs/common';
 import { TutorialService } from './tutorial.service';
-import { TutorialRegisterDTO } from './dto/tutorial.dto';
-import { Tutorials } from 'src/infra/database/entities/tutorial.entity';
+import { TutorialQuery, TutorialRegisterDTO } from './dto/tutorial.dto';
 
 @Controller('tutorial')
 export class TutorialController {
   constructor(private readonly service: TutorialService) {}
 
   @Get('')
-  async findAll(@Query() body: Partial<Tutorials> = {}) {
+  async findAll(@Query() body: TutorialQuery) {
     return this.service.findAll(body);
   }
 

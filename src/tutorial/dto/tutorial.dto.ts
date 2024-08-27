@@ -6,6 +6,8 @@ import {
   IsEmail,
   IsBoolean,
   IsOptional,
+  IsDateString,
+  IsNumber,
 } from 'class-validator';
 
 export class TutorialRegisterDTO {
@@ -29,10 +31,29 @@ export class TutorialRegisterDTO {
   deleted: boolean;
 
   @IsOptional()
+  @IsDateString()
   deletedAt: Date;
 }
 
 export class TutorialDTO extends TutorialRegisterDTO {
   @IsString()
   _id: string;
+}
+
+export class TutorialQuery {
+  @IsOptional()
+  @IsString()
+  title: string;
+
+  @IsOptional()
+  @IsDateString()
+  createdAt: Date;
+
+  @IsOptional()
+  @IsDateString()
+  updatedAt: Date;
+
+  @IsOptional()
+  @IsNumber()
+  days: number;
 }
