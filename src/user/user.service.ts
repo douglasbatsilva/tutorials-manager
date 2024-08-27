@@ -9,12 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class UserService {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly repository: UserRepository,
     private readonly jwtService: JwtService,
   ) {}
 
   async create(body: UserRegisterDTO): Promise<void> {
-    const userData = await this.verifyIfUserExists(body.email, body.userName);
+    const userData = await this.findByEmailOrName(body.email, body.userName);
 
     if (userData?.length > 0) {
       throw new HttpException(
@@ -25,10 +25,10 @@ export class UserService {
 
     const user = this.buildUserData(body);
 
-    this.userRepository.create(user);
+    this.repository.create(user);
   }
 
-  async verifyIfUserExists(email: string, userName: string): Promise<any> {
+  async findByEmailOrName(email: string, userName: string): Promise<any> {
     const userEmail = email?.toLocaleLowerCase();
     const name = diacriticSensitiveRegex(userName);
 
@@ -36,6 +36,7 @@ export class UserService {
     // Em alguns cenários, pesquisar por query acaba por
     // Não utilizar os índices criado no banco, mas
     // no âmbito de um teste técnico, acredito que essa saída atende bem
+    // A melhor saída, em produção, é salvar tudo sem acentos e lowercase
     const query = {
       $or: [
         { email: userEmail },
@@ -43,7 +44,7 @@ export class UserService {
       ],
     };
 
-    return this.userRepository.findByQuery(query);
+    return this.repository.findByQuery(query);
   }
 
   buildUserData(body: UserRegisterDTO): UserDTO {
@@ -53,7 +54,7 @@ export class UserService {
   }
 
   async login(body: Partial<UserRegisterDTO>): Promise<string> {
-    const user = await this.verifyIfUserExists(body.email, body.userName);
+    const user = await this.findByEmailOrName(body.email, body.userName);
 
     if (!user?.length) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);

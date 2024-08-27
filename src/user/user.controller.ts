@@ -4,15 +4,15 @@ import { UserRegisterDTO } from './dto/user.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly service: UserService) {}
 
   @Post('signup')
   async create(@Body() body: UserRegisterDTO) {
-    return this.userService.create(body);
+    return this.service.create(body);
   }
 
   @Post('login')
   async login(@Body() body: Partial<UserRegisterDTO>) {
-    return this.userService.login(body);
+    return this.service.login(body);
   }
 }

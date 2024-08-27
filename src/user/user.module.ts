@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { CacheDBModule } from 'src/infra/cache/cache.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersSchema } from 'src/infra/database/entities/user.entity';
 import { UserRepository } from 'src/infra/database/user.repository';
@@ -11,7 +10,6 @@ import { JwtModule } from '@nestjs/jwt';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Users', schema: UsersSchema }]),
-    CacheDBModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
