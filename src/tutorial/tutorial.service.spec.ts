@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TutorialService } from './tutorial.service';
 import { TutorialRepository } from 'src/infra/database/tutorial.repository';
-import { CacheDBService } from 'src/infra/cache/cache.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TutorialQuery, TutorialRegisterDTO } from './dto/tutorial.dto';
 import { IFindResult } from 'src/infra/database/tutorial.interface';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 const testQuery: TutorialQuery = {
   title: 'Test Title',
@@ -42,7 +43,7 @@ const validTutorial: any = {
 
 describe('TutorialService', () => {
   let service: TutorialService;
-  let cacheServiceMock: Partial<CacheDBService>;
+  let cacheServiceMock: Partial<Cache>;
 
   const tutorialRepositoryMock = {
     find: jest.fn(),
@@ -54,15 +55,16 @@ describe('TutorialService', () => {
 
   beforeAll(async () => {
     cacheServiceMock = {
-      get: jest.fn((key: string, callback: () => Promise<any>) => callback()),
-      del: jest.fn(),
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn().mockResolvedValue(undefined),
+      del: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TutorialService,
         { provide: TutorialRepository, useValue: tutorialRepositoryMock },
-        { provide: CacheDBService, useValue: cacheServiceMock },
+        { provide: CACHE_MANAGER, useValue: cacheServiceMock },
       ],
     }).compile();
 
