@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { TutorialRepository } from 'src/infra/database/tutorial.repository';
 import {
   TutorialDTO,
@@ -6,21 +6,22 @@ import {
   TutorialRegisterDTO,
 } from './dto/tutorial.dto';
 import { createHash, randomUUID } from 'crypto';
-import { CacheDBService } from 'src/infra/cache/cache.service';
 import { startOfDay, endOfDay, addDays } from 'date-fns';
 import {
   IFindResult,
   IPaginatedQuery,
   IPaginatedQueryResult,
+  ITutorialData,
 } from 'src/infra/database/tutorial.interface';
 import { UpdateWriteOpResult } from 'mongoose';
 import { Tutorials } from 'src/infra/database/entities/tutorial.entity';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class TutorialService {
   constructor(
     private readonly repository: TutorialRepository,
-    private readonly cacheService: CacheDBService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
 
   async findAll(body: TutorialQuery): Promise<IFindResult> {
@@ -73,6 +74,8 @@ export class TutorialService {
 
     const data: TutorialDTO = { _id: randomUUID(), ...body };
 
+    this.invalidateCache();
+
     return this.repository.create(data);
   }
 
@@ -108,8 +111,8 @@ export class TutorialService {
   }
 
   invalidateCache() {
-    this.cacheService.del('tutorials:count:*');
-    this.cacheService.del('tutorials:pages:*');
+    this.cache.del('tutorials:count:*');
+    this.cache.del('tutorials:pages:*');
   }
 
   buildPaginatedQuery(query: IPaginatedQuery): IPaginatedQueryResult {
@@ -136,20 +139,24 @@ export class TutorialService {
       .update(JSON.stringify(thisQuery.filter))
       .digest('hex');
     const totalCashKey = `tutorials:count:${hash}`;
-    const total = await this.cacheService.get(totalCashKey, async () =>
-      this.repository.count(thisQuery.filter),
-    );
+    let total: number = await this.cache.get(totalCashKey);
+    if (total == null) {
+      total = await this.repository.count(thisQuery.filter);
+      await this.cache.set(totalCashKey, total);
+    }
 
-    const pages = Math.ceil(total / thisQuery.limit);
+    const pages = Math.ceil((total as number) / thisQuery.limit);
     const page = Math.ceil(thisQuery.skip / thisQuery.limit) + 1;
 
     const resultHash = createHash('sha1')
       .update(JSON.stringify(thisQuery))
       .digest('hex');
     const resultCashKey = `tutorials:pages:${resultHash}`;
-    const result = await this.cacheService.get(resultCashKey, async () =>
-      this.repository.find(thisQuery),
-    );
+    let result: ITutorialData[] = await this.cache.get(resultCashKey);
+    if (result == null) {
+      result = await this.repository.find(thisQuery);
+      await this.cache.set(resultCashKey, result);
+    }
 
     return {
       metadata: {
