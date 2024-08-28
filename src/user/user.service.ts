@@ -46,7 +46,7 @@ export class UserService {
   }
 
   buildUserData(body: UserRegisterDTO): UserDTO {
-    const hash = createHash('md5').update(body.password).digest('hex');
+    const hash = createHash('sha1').update(body.password).digest('hex');
 
     return { ...body, password: hash, _id: randomUUID() };
   }
@@ -58,7 +58,7 @@ export class UserService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    const hash = createHash('md5').update(body.password).digest('hex');
+    const hash = createHash('sha1').update(body.password).digest('hex');
 
     if (hash !== user[0].password) {
       throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED);

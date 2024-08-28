@@ -132,7 +132,7 @@ export class TutorialService {
   async getPaginated(query: TutorialQuery): Promise<IFindResult> {
     const thisQuery = this.buildPaginatedQuery(query);
 
-    const hash = createHash('md5')
+    const hash = createHash('sha1')
       .update(JSON.stringify(thisQuery.filter))
       .digest('hex');
     const totalCashKey = `tutorials:count:${hash}`;
@@ -143,7 +143,7 @@ export class TutorialService {
     const pages = Math.ceil(total / thisQuery.limit);
     const page = Math.ceil(thisQuery.skip / thisQuery.limit) + 1;
 
-    const resultHash = createHash('md5')
+    const resultHash = createHash('sha1')
       .update(JSON.stringify(thisQuery))
       .digest('hex');
     const resultCashKey = `tutorials:pages:${resultHash}`;

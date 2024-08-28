@@ -44,7 +44,7 @@ describe('UserService', () => {
 
       const result = expect.objectContaining({
         ...validUser,
-        password: createHash('md5').update('password123').digest('hex'),
+        password: createHash('sha1').update('password123').digest('hex'),
       });
 
       expect(mockUserRepository.create).toHaveBeenCalledWith(result);
@@ -101,7 +101,7 @@ describe('UserService', () => {
       mockUserRepository.findByQuery.mockResolvedValue([
         {
           email: validUser.email,
-          password: createHash('md5').update(validUser.password).digest('hex'),
+          password: createHash('sha1').update(validUser.password).digest('hex'),
         } as Users,
       ]);
 
@@ -119,7 +119,7 @@ describe('UserService', () => {
       mockUserRepository.findByQuery.mockResolvedValue([
         {
           email: validUser.email,
-          password: createHash('md5').update(validUser.password).digest('hex'),
+          password: createHash('sha1').update(validUser.password).digest('hex'),
         } as Users,
       ]);
 
