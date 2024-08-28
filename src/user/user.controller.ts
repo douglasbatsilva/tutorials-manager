@@ -2,12 +2,14 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserRegisterDTO } from './dto/user.dto';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/auth/auth.decorators';
 
 @ApiTags('Users')
 @Controller('user')
 export class UserController {
   constructor(private readonly service: UserService) {}
 
+  @Public()
   @Post('signup')
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'User successfully created.' })
@@ -18,6 +20,7 @@ export class UserController {
     return this.service.create(body);
   }
 
+  @Public()
   @Post('login')
   @ApiOperation({ summary: 'Login a user' })
   @ApiResponse({ status: 200, description: 'User token' })

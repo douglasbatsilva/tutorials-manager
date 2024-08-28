@@ -4,6 +4,7 @@ import { TutorialModule } from './tutorial/tutorial.module';
 import { ConfigModule } from '@nestjs/config';
 import { CacheDBModule } from './infra/cache/cache.module';
 import { DatabaseModule } from './infra/database/database.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { DatabaseModule } from './infra/database/database.module';
     DatabaseModule,
     UserModule,
     TutorialModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
