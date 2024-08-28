@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, UpdateWriteOpResult } from 'mongoose';
 import { Tutorials } from './entities/tutorial.entity';
 import { TutorialDTO } from 'src/tutorial/dto/tutorial.dto';
-import { FindResult } from './tutorial.interface';
+import { TutorialData } from './tutorial.interface';
 
 @Injectable()
 export class TutorialRepository {
@@ -12,30 +12,19 @@ export class TutorialRepository {
     private repository: Model<Tutorials>,
   ) {}
 
-  async find(query: any = {}): Promise<FindResult | null> {
-    const { skip = 0, pageSize = 10 } = query?.metadata ?? {};
+  async find(query: any): Promise<TutorialData[] | null> {
+    const { filter = {}, sort = {}, skip = 0, limit = 10 } = query;
 
-    const match = { deleted: { $ne: true }, ...(query?.match || {}) };
-
-    const facet = {
-      metadata: [{ $count: 'total' }],
-      data: [{ $skip: skip }, { $limit: pageSize }],
-    };
-
-    const sort = query?.sort ?? { createdAt: -1 };
-
-    const result = await this.repository
-      .aggregate([{ $match: match }, { $facet: facet }, { $sort: sort }])
+    return this.repository
+      .find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
       .exec();
+  }
 
-    const total = result?.[0]?.metadata?.[0]?.total || 0;
-    const pages = Math.ceil(total / pageSize);
-    const page = Math.floor(skip / pageSize) + 1;
-
-    return {
-      metadata: { total, pages, page, pageSize },
-      data: result?.[0]?.data || [],
-    };
+  async count(filter: any): Promise<number> {
+    return this.repository.countDocuments(filter).exec();
   }
 
   async create(data: Partial<TutorialDTO>): Promise<Tutorials> {

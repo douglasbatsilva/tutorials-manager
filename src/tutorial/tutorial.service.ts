@@ -7,6 +7,8 @@ import {
 } from './dto/tutorial.dto';
 import { createHash, randomUUID } from 'crypto';
 import { CacheDBService } from 'src/infra/cache/cache.service';
+import { startOfDay, endOfDay, addDays } from 'date-fns';
+import { FindResult } from 'src/infra/database/tutorial.interface';
 
 @Injectable()
 export class TutorialService {
@@ -20,9 +22,7 @@ export class TutorialService {
 
     const hash = createHash('md5').update(JSON.stringify(query)).digest('hex');
 
-    return this.cacheService.get(hash, async () =>
-      this.repository.find({ match: query }),
-    );
+    return this.cacheService.get(hash, async () => this.getPaginated(query));
   }
 
   buildQuery(body?: TutorialQuery) {
@@ -46,9 +46,9 @@ export class TutorialService {
   }
 
   buildDateRange(date: Date, range: number = 30) {
-    const startDate = new Date(date);
+    const startDate = startOfDay(date);
 
-    const endDate = new Date(startDate);
+    const endDate = endOfDay(addDays(date, range));
 
     endDate.setDate(endDate.getDate() + range);
 
@@ -60,7 +60,7 @@ export class TutorialService {
 
     const tutorials = await this.repository.find(query);
 
-    if (tutorials?.data?.length > 0) {
+    if (tutorials?.length > 0) {
       throw new HttpException(
         'Tutorial already exists',
         HttpStatus.PRECONDITION_FAILED,
@@ -78,5 +78,42 @@ export class TutorialService {
 
   async delete(id: string) {
     return this.repository.delete(id);
+  }
+
+  buildPaginatedQuery(query: any) {
+    const {
+      skip = 0,
+      pageSize = 10,
+      sort,
+      order = 'asc',
+      ...rest
+    } = query ?? {};
+
+    const nonDeleted = { deleted: { $ne: true } };
+    const resultOrder = order === 'asc' ? 1 : -1;
+    const sortQuery = { [sort ?? 'createdAt']: resultOrder };
+    const filter = { ...nonDeleted, ...rest };
+
+    return { filter, sort: sortQuery, skip, limit: pageSize };
+  }
+
+  async getPaginated(query: TutorialQuery): Promise<FindResult> {
+    const thisQuery = this.buildPaginatedQuery(query);
+
+    const total = await this.repository.count(thisQuery.filter);
+    const pages = Math.ceil(total / thisQuery.limit);
+    const page = Math.ceil(thisQuery.skip / thisQuery.limit) + 1;
+
+    const result = await this.repository.find(thisQuery);
+
+    return {
+      metadata: {
+        total,
+        pages,
+        page,
+        pageSize: thisQuery.limit,
+      },
+      data: result,
+    };
   }
 }

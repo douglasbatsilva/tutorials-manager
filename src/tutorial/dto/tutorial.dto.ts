@@ -19,7 +19,7 @@ export class TutorialRegisterDTO {
 
   @IsEmail()
   @IsNotEmpty()
-  by: string;
+  createdBy: string;
 
   @IsString()
   @IsNotEmpty()
@@ -43,17 +43,17 @@ export class TutorialDTO extends TutorialRegisterDTO {
 export class TutorialQuery {
   @IsOptional()
   @IsString()
-  title: string;
+  title?: string;
 
   @IsOptional()
   @IsDateString()
-  createdAt: Date;
+  createdAt?: Date;
 
   @IsOptional()
   @IsDateString()
-  updatedAt: Date;
+  updatedAt?: Date;
 
   @IsOptional()
   @IsNumber()
-  days: number;
+  days?: number;
 }

@@ -5,7 +5,7 @@ interface PaginationMetadata {
   pageSize: number;
 }
 
-interface TutorialData {
+export interface TutorialData {
   _id: string;
   title: string;
   createdBy: string;

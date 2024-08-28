@@ -4,7 +4,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 export class Tutorials {
   @Prop() _id: string;
   @Prop() title: string;
-  @Prop() by: string;
+  @Prop() createdBy: string;
   @Prop() data: string;
   @Prop() createdAt: Date;
   @Prop() updatedAt: Date;
