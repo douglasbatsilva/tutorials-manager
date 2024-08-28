@@ -4,9 +4,8 @@ import { TutorialRepository } from 'src/infra/database/tutorial.repository';
 import { CacheDBService } from 'src/infra/cache/cache.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TutorialQuery, TutorialRegisterDTO } from './dto/tutorial.dto';
-import { createHash } from 'crypto';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { FindResult } from 'src/infra/database/tutorial.interface';
+import { IFindResult } from 'src/infra/database/tutorial.interface';
 
 const testQuery: TutorialQuery = {
   title: 'Test Title',
@@ -18,7 +17,7 @@ const updatedAtTestQuery: TutorialQuery = {
   updatedAt: new Date('2024-08-28'),
 };
 
-const testTutorial: FindResult = {
+const testTutorial: IFindResult = {
   metadata: {
     total: 1,
     pages: 1,
@@ -60,6 +59,7 @@ describe('TutorialService', () => {
 
     cacheServiceMock = {
       get: jest.fn((key: string, callback: () => Promise<any>) => callback()),
+      del: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -109,38 +109,6 @@ describe('TutorialService', () => {
       expect(tutorialRepositoryMock.find).toHaveBeenCalled();
       expect(tutorialRepositoryMock.count).toHaveBeenCalled();
     });
-
-    it('should return tutorials from the cache or repository', async () => {
-      const query = service.buildQuery(testQuery);
-
-      const hash = createHash('md5')
-        .update(JSON.stringify(query))
-        .digest('hex');
-
-      (cacheServiceMock.get as jest.Mock).mockImplementation(
-        (key: string, callback: () => Promise<any>) => {
-          expect(key).toBe(hash);
-          return callback();
-        },
-      );
-
-      (tutorialRepositoryMock.find as jest.Mock).mockResolvedValue(
-        testTutorial.data,
-      );
-      (tutorialRepositoryMock.count as jest.Mock).mockResolvedValue(
-        testTutorial.metadata.total,
-      );
-
-      const result = await service.findAll(testQuery);
-
-      expect(result).toEqual(testTutorial);
-      expect(tutorialRepositoryMock.find).toHaveBeenCalled();
-      expect(tutorialRepositoryMock.count).toHaveBeenCalled();
-      expect(cacheServiceMock.get).toHaveBeenCalledWith(
-        hash,
-        expect.any(Function),
-      );
-    });
   });
 
   describe('create', () => {
@@ -188,10 +156,25 @@ describe('TutorialService', () => {
 
       expect(result).toEqual({ nModified: 1 });
     });
+
+    it('should throw HttpException if tutorial is not found', async () => {
+      const id = 'non-existent-id';
+      const updateData: Partial<TutorialRegisterDTO> = {
+        title: 'Updated Title',
+      };
+
+      (tutorialRepositoryMock.count as jest.Mock).mockResolvedValue(0);
+
+      await expect(service.update(id, updateData)).rejects.toThrow(
+        new HttpException('Tutorial not found', HttpStatus.NOT_FOUND),
+      );
+    });
   });
 
   describe('delete', () => {
     it('should delete a tutorial', async () => {
+      (tutorialRepositoryMock.count as jest.Mock).mockResolvedValue(1);
+
       (tutorialRepositoryMock.delete as jest.Mock).mockResolvedValue({
         deletedCount: 1,
       });
@@ -202,6 +185,16 @@ describe('TutorialService', () => {
         testTutorial.data[0]._id,
       );
       expect(result).toEqual({ deletedCount: 1 });
+    });
+
+    it('should throw HttpException if tutorial is not found', async () => {
+      const id = 'non-existent-id';
+
+      (tutorialRepositoryMock.count as jest.Mock).mockResolvedValue(0);
+
+      await expect(service.delete(id)).rejects.toThrow(
+        new HttpException('Tutorial not found', HttpStatus.NOT_FOUND),
+      );
     });
   });
 });

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, UpdateWriteOpResult } from 'mongoose';
 import { Tutorials } from './entities/tutorial.entity';
 import { TutorialDTO } from 'src/tutorial/dto/tutorial.dto';
-import { TutorialData } from './tutorial.interface';
+import { ITutorialData } from './tutorial.interface';
 
 @Injectable()
 export class TutorialRepository {
@@ -12,7 +12,7 @@ export class TutorialRepository {
     private repository: Model<Tutorials>,
   ) {}
 
-  async find(query: any): Promise<TutorialData[] | null> {
+  async find(query: any): Promise<ITutorialData[] | null> {
     const { filter = {}, sort = {}, skip = 0, limit = 10 } = query;
 
     return this.repository

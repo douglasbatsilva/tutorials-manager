@@ -8,7 +8,12 @@ import {
 import { createHash, randomUUID } from 'crypto';
 import { CacheDBService } from 'src/infra/cache/cache.service';
 import { startOfDay, endOfDay, addDays } from 'date-fns';
-import { FindResult } from 'src/infra/database/tutorial.interface';
+import {
+  IFindResult,
+  IPaginatedQuery,
+  IPaginatedQueryResult,
+} from 'src/infra/database/tutorial.interface';
+import { UpdateWriteOpResult } from 'mongoose';
 
 @Injectable()
 export class TutorialService {
@@ -17,12 +22,10 @@ export class TutorialService {
     private readonly cacheService: CacheDBService,
   ) {}
 
-  async findAll(body: TutorialQuery) {
+  async findAll(body: TutorialQuery): Promise<IFindResult> {
     const query = this.buildQuery(body);
 
-    const hash = createHash('md5').update(JSON.stringify(query)).digest('hex');
-
-    return this.cacheService.get(hash, async () => this.getPaginated(query));
+    return this.getPaginated(query);
   }
 
   buildQuery(body?: TutorialQuery) {
@@ -55,10 +58,10 @@ export class TutorialService {
     return { $gte: startDate, $lte: endDate };
   }
 
-  async create(body: TutorialRegisterDTO) {
-    const query = { $or: [{ title: body.title }, { data: body.data }] };
+  async create(body: TutorialRegisterDTO): Promise<void> {
+    const filter = { $or: [{ title: body.title }, { data: body.data }] };
 
-    const tutorials = await this.repository.find(query);
+    const tutorials = await this.repository.find({ filter });
 
     if (tutorials?.length > 0) {
       throw new HttpException(
@@ -72,15 +75,43 @@ export class TutorialService {
     this.repository.create(data);
   }
 
-  async update(id: string, body: Partial<TutorialRegisterDTO>) {
+  async update(
+    id: string,
+    body: Partial<TutorialRegisterDTO>,
+  ): Promise<UpdateWriteOpResult> {
+    const filter = { _id: id, deleted: { $ne: true } };
+
+    const total = await this.repository.count({ filter });
+
+    if (total === 0) {
+      throw new HttpException('Tutorial not found', HttpStatus.NOT_FOUND);
+    }
+
+    this.invalidateCache();
+
     return this.repository.update(id, body);
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<UpdateWriteOpResult> {
+    const filter = { _id: id, deleted: { $ne: true } };
+
+    const total = await this.repository.count({ filter });
+
+    if (total === 0) {
+      throw new HttpException('Tutorial not found', HttpStatus.NOT_FOUND);
+    }
+
+    this.invalidateCache();
+
     return this.repository.delete(id);
   }
 
-  buildPaginatedQuery(query: any) {
+  invalidateCache() {
+    this.cacheService.del('tutorials:count:*');
+    this.cacheService.del('tutorials:pages:*');
+  }
+
+  buildPaginatedQuery(query: IPaginatedQuery): IPaginatedQueryResult {
     const {
       skip = 0,
       pageSize = 10,
@@ -97,14 +128,27 @@ export class TutorialService {
     return { filter, sort: sortQuery, skip, limit: pageSize };
   }
 
-  async getPaginated(query: TutorialQuery): Promise<FindResult> {
+  async getPaginated(query: TutorialQuery): Promise<IFindResult> {
     const thisQuery = this.buildPaginatedQuery(query);
 
-    const total = await this.repository.count(thisQuery.filter);
+    const hash = createHash('md5')
+      .update(JSON.stringify(thisQuery.filter))
+      .digest('hex');
+    const totalCashKey = `tutorials:count:${hash}`;
+    const total = await this.cacheService.get(totalCashKey, async () =>
+      this.repository.count(thisQuery.filter),
+    );
+
     const pages = Math.ceil(total / thisQuery.limit);
     const page = Math.ceil(thisQuery.skip / thisQuery.limit) + 1;
 
-    const result = await this.repository.find(thisQuery);
+    const resultHash = createHash('md5')
+      .update(JSON.stringify(thisQuery))
+      .digest('hex');
+    const resultCashKey = `tutorials:pages:${resultHash}`;
+    const result = await this.cacheService.get(resultCashKey, async () =>
+      this.repository.find(thisQuery),
+    );
 
     return {
       metadata: {
