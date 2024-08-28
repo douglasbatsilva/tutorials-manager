@@ -14,6 +14,7 @@ import {
   IPaginatedQueryResult,
 } from 'src/infra/database/tutorial.interface';
 import { UpdateWriteOpResult } from 'mongoose';
+import { Tutorials } from 'src/infra/database/entities/tutorial.entity';
 
 @Injectable()
 export class TutorialService {
@@ -58,7 +59,7 @@ export class TutorialService {
     return { $gte: startDate, $lte: endDate };
   }
 
-  async create(body: TutorialRegisterDTO): Promise<void> {
+  async create(body: TutorialRegisterDTO): Promise<Tutorials> {
     const filter = { $or: [{ title: body.title }, { data: body.data }] };
 
     const tutorials = await this.repository.find({ filter });
@@ -72,7 +73,7 @@ export class TutorialService {
 
     const data: TutorialDTO = { _id: randomUUID(), ...body };
 
-    this.repository.create(data);
+    return this.repository.create(data);
   }
 
   async update(
@@ -81,7 +82,7 @@ export class TutorialService {
   ): Promise<UpdateWriteOpResult> {
     const filter = { _id: id, deleted: { $ne: true } };
 
-    const total = await this.repository.count({ filter });
+    const total = await this.repository.count(filter);
 
     if (total === 0) {
       throw new HttpException('Tutorial not found', HttpStatus.NOT_FOUND);
@@ -95,7 +96,7 @@ export class TutorialService {
   async delete(id: string): Promise<UpdateWriteOpResult> {
     const filter = { _id: id, deleted: { $ne: true } };
 
-    const total = await this.repository.count({ filter });
+    const total = await this.repository.count(filter);
 
     if (total === 0) {
       throw new HttpException('Tutorial not found', HttpStatus.NOT_FOUND);
