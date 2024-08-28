@@ -4,7 +4,6 @@ import { TutorialRepository } from 'src/infra/database/tutorial.repository';
 import { CacheDBService } from 'src/infra/cache/cache.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TutorialQuery, TutorialRegisterDTO } from './dto/tutorial.dto';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { IFindResult } from 'src/infra/database/tutorial.interface';
 
 const testQuery: TutorialQuery = {
@@ -43,7 +42,6 @@ const validTutorial: any = {
 
 describe('TutorialService', () => {
   let service: TutorialService;
-  let mongoServer: MongoMemoryServer;
   let cacheServiceMock: Partial<CacheDBService>;
 
   const tutorialRepositoryMock = {
@@ -55,8 +53,6 @@ describe('TutorialService', () => {
   };
 
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-
     cacheServiceMock = {
       get: jest.fn((key: string, callback: () => Promise<any>) => callback()),
       del: jest.fn(),
@@ -71,10 +67,6 @@ describe('TutorialService', () => {
     }).compile();
 
     service = module.get<TutorialService>(TutorialService);
-  });
-
-  afterAll(async () => {
-    await mongoServer.stop();
   });
 
   describe('findAll', () => {

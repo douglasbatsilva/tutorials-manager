@@ -5,7 +5,6 @@ import { JwtService } from '@nestjs/jwt';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { Users } from 'src/infra/database/entities/user.entity';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { UserRegisterDTO } from './dto/user.dto';
 
 const validUser: UserRegisterDTO = {
@@ -16,7 +15,6 @@ const validUser: UserRegisterDTO = {
 
 describe('UserService', () => {
   let service: UserService;
-  let mongoServer: MongoMemoryServer;
 
   const mockUserRepository = {
     create: jest.fn(),
@@ -28,8 +26,6 @@ describe('UserService', () => {
   };
 
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [],
       providers: [
@@ -40,10 +36,6 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
-  });
-
-  afterAll(async () => {
-    await mongoServer.stop();
   });
 
   describe('Create User Tests', () => {
