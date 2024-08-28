@@ -64,9 +64,6 @@ export class UserService {
       throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED);
     }
 
-    return this.jwtService.sign({
-      email: user[0].email,
-      userName: user[0].userName,
-    });
+    return this.jwtService.sign({ id: user[0]._id });
   }
 }
