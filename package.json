@@ -87,10 +87,13 @@
       "/dist/",
       "/coverage/",
       "/.eslintrc.js",
-      ".*\\.module\\..*",
       ".*\\.repository\\..*",
       ".*\\.controller\\..*",
-      ".*\\.dto\\..*"
+      ".*\\.decorators\\..*",
+      ".*\\.module\\..*",
+      ".*\\.guard\\..*",
+      ".*\\.dto\\..*",
+      "/src/main.ts"
     ]
   }
 }
