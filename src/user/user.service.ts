@@ -1,11 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserRegisterDTO } from './dto/user.dto';
 import { createHash, randomUUID } from 'crypto';
-import { UserRepository } from 'src/infra/database/user.repository';
+import { UserRepository } from './user.repository';
 import { UserDTO } from './dto/user.dto';
 import { diacriticSensitiveRegex } from 'src/utils/utils';
 import { JwtService } from '@nestjs/jwt';
-import { Users } from 'src/infra/database/entities/user.entity';
+import { Users } from '../infra/database/schemas';
 
 @Injectable()
 export class UserService {

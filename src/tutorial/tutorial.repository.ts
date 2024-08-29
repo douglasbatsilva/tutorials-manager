@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, UpdateWriteOpResult } from 'mongoose';
-import { Tutorials } from './entities/tutorial.entity';
+import { Tutorials } from '../infra/database/schemas';
 import { TutorialDTO } from 'src/tutorial/dto/tutorial.dto';
-import { ITutorialData } from './tutorial.interface';
+import { ITutorialData } from 'src/infra/database/tutorial.interface';
 
 @Injectable()
 export class TutorialRepository {

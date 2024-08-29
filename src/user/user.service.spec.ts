@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
-import { UserRepository } from 'src/infra/database/user.repository';
+import { UserRepository } from './user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { Users } from 'src/infra/database/entities/user.entity';
+import { Users } from 'src/infra/database/schemas';
 import { UserRegisterDTO } from './dto/user.dto';
 
 const validUser: UserRegisterDTO = {

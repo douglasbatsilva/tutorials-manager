@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TutorialService } from './tutorial.service';
-import { TutorialRepository } from 'src/infra/database/tutorial.repository';
+import { TutorialRepository } from './tutorial.repository';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { TutorialQuery, TutorialRegisterDTO } from './dto/tutorial.dto';
 import { IFindResult } from 'src/infra/database/tutorial.interface';

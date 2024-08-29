@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
-import { TutorialRepository } from 'src/infra/database/tutorial.repository';
+import { TutorialRepository } from './tutorial.repository';
 import {
   TutorialDTO,
   TutorialQuery,
@@ -14,7 +14,7 @@ import {
   ITutorialData,
 } from 'src/infra/database/tutorial.interface';
 import { UpdateWriteOpResult } from 'mongoose';
-import { Tutorials } from 'src/infra/database/entities/tutorial.entity';
+import { Tutorials } from 'src/infra/database/schemas';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
