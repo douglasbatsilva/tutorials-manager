@@ -1,16 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
+  IsDateString,
   IsNotEmpty,
+  IsOptional,
   MaxLength,
   MinLength,
+  IsBoolean,
   IsString,
   IsEmail,
-  IsBoolean,
-  IsOptional,
-  IsDateString,
+  IsEnum,
   IsNumber,
 } from 'class-validator';
+import { createHash } from 'crypto';
 
 export class TutorialRegisterDTO {
   @IsString()
@@ -67,28 +69,53 @@ export class TutorialQuery {
   @IsOptional()
   @IsDateString()
   @ApiProperty({
-    description: 'Tutorial created date',
+    description: 'Initial Date of Tutorial',
     example: '2024-08-28',
     required: false,
   })
-  createdAt?: Date;
+  start?: Date;
 
   @IsOptional()
   @IsDateString()
   @ApiProperty({
-    description: 'Tutorial updated date',
-    example: '2024-08-28',
+    description: 'Final Date of Tutorial',
+    example: '2024-09-28',
     required: false,
   })
-  updatedAt?: Date;
+  end?: Date;
 
   @IsOptional()
-  @IsNumber()
-  @Transform(({ value }) => Number(value))
+  @IsString()
+  @IsEnum(['createdAt', 'updatedAt'])
   @ApiProperty({
-    description: 'Tutorial date range',
-    example: 30,
+    description: 'Date Field',
+    example: 'createdAt or updatedAt',
+    enum: ['createdAt', 'updatedAt'],
     required: false,
   })
-  days?: number;
+  dateField?: 'createdAt' | 'updatedAt';
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'Order',
+    example: 'asc, desc',
+    enum: ['asc', 'desc'],
+    required: false,
+  })
+  order?: 'asc' | 'desc';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'Page Size',
+    example: 100,
+    required: false,
+  })
+  pageSize?: number;
+
+  getHash() {
+    return createHash('sha1').update(JSON.stringify(this)).digest('hex');
+  }
 }

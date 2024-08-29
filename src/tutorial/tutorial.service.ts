@@ -5,8 +5,8 @@ import {
   TutorialQuery,
   TutorialRegisterDTO,
 } from './dto/tutorial.dto';
-import { createHash, randomUUID } from 'crypto';
-import { startOfDay, endOfDay, addDays } from 'date-fns';
+import { randomUUID } from 'crypto';
+import { startOfDay, endOfDay } from 'date-fns';
 import {
   IFindResult,
   IPaginatedQuery,
@@ -23,42 +23,6 @@ export class TutorialService {
     private readonly repository: TutorialRepository,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
-
-  async findAll(body: TutorialQuery): Promise<IFindResult> {
-    const query = this.buildQuery(body);
-
-    return this.getPaginated(query);
-  }
-
-  buildQuery(body?: TutorialQuery) {
-    const { title, createdAt, updatedAt, days } = body ?? {};
-
-    const query: any = {};
-
-    if (title != null) {
-      query.title = title;
-    }
-
-    if (createdAt != null) {
-      query.createdAt = this.buildDateRange(createdAt, days);
-    }
-
-    if (updatedAt != null) {
-      query.updatedAt = this.buildDateRange(updatedAt, days);
-    }
-
-    return query;
-  }
-
-  buildDateRange(date: Date, range: number = 30) {
-    const startDate = startOfDay(date);
-
-    const endDate = endOfDay(addDays(date, range));
-
-    endDate.setDate(endDate.getDate() + range);
-
-    return { $gte: startDate, $lte: endDate };
-  }
 
   async create(body: TutorialRegisterDTO): Promise<Tutorials> {
     try {
@@ -113,57 +77,79 @@ export class TutorialService {
     this.cache.del('tutorials:pages:*');
   }
 
+  async findAll(tutorialQuery: TutorialQuery): Promise<IFindResult> {
+    const dbQuery = this.buildPaginatedQuery(tutorialQuery);
+
+    const count = await this.getCount(tutorialQuery, dbQuery);
+    const data = await this.getPage(tutorialQuery, dbQuery);
+
+    const pages = Math.ceil(count / dbQuery.limit);
+    const page = Math.ceil(dbQuery.skip / dbQuery.limit) + 1;
+
+    return {
+      metadata: { total: count, pages, page, pageSize: dbQuery.limit },
+      data: data,
+    };
+  }
+
   buildPaginatedQuery(query: IPaginatedQuery): IPaginatedQueryResult {
     const {
-      skip = 0,
       pageSize = 10,
-      sort,
       order = 'asc',
+      dateField,
+      skip = 0,
       ...rest
     } = query ?? {};
 
-    const nonDeleted = { deleted: { $ne: true } };
-    const resultOrder = order === 'asc' ? 1 : -1;
-    const sortQuery = { [sort ?? 'createdAt']: resultOrder };
-    const filter = { ...nonDeleted, ...rest };
+    const queryFilter: any = {};
 
-    return { filter, sort: sortQuery, skip, limit: pageSize };
+    const { title, start, end } = rest ?? {};
+
+    if (start != null && end != null && dateField != null) {
+      queryFilter[dateField] = { $gte: startOfDay(start), $lte: endOfDay(end) };
+    }
+
+    if (title != null) queryFilter.title = title;
+
+    const nonDeleted = { deleted: { $ne: true } };
+
+    const filter = { ...queryFilter, ...nonDeleted };
+
+    const resultOrder = order === 'asc' ? 1 : -1;
+    const sort = { [dateField ?? 'createdAt']: resultOrder };
+
+    return { filter, sort, skip, limit: pageSize };
   }
 
-  async getPaginated(query: TutorialQuery): Promise<IFindResult> {
-    const thisQuery = this.buildPaginatedQuery(query);
+  private async getCount(
+    query: TutorialQuery,
+    dbQuery: IPaginatedQueryResult,
+  ): Promise<number> {
+    const countKey = `tutorials:count:${query.getHash()}`;
 
-    const hash = createHash('sha1')
-      .update(JSON.stringify(thisQuery.filter))
-      .digest('hex');
-    const totalCashKey = `tutorials:count:${hash}`;
-    let total: number = await this.cache.get(totalCashKey);
-    if (total == null) {
-      total = await this.repository.count(thisQuery.filter);
-      await this.cache.set(totalCashKey, total);
+    let count: number = await this.cache.get(countKey);
+
+    if (count == null) {
+      count = await this.repository.count(dbQuery.filter);
+      await this.cache.set(countKey, count);
     }
 
-    const pages = Math.ceil((total as number) / thisQuery.limit);
-    const page = Math.ceil(thisQuery.skip / thisQuery.limit) + 1;
+    return count;
+  }
 
-    const resultHash = createHash('sha1')
-      .update(JSON.stringify(thisQuery))
-      .digest('hex');
-    const resultCashKey = `tutorials:pages:${resultHash}`;
-    let result: ITutorialData[] = await this.cache.get(resultCashKey);
+  async getPage(
+    query: TutorialQuery,
+    dbQuery: IPaginatedQueryResult,
+  ): Promise<ITutorialData[]> {
+    const resultKey = `tutorials:pages:${query.getHash()}`;
+
+    let result: ITutorialData[] = await this.cache.get(resultKey);
+
     if (result == null) {
-      result = await this.repository.find(thisQuery);
-      await this.cache.set(resultCashKey, result);
+      result = await this.repository.find(dbQuery);
+      await this.cache.set(resultKey, result);
     }
 
-    return {
-      metadata: {
-        total,
-        pages,
-        page,
-        pageSize: thisQuery.limit,
-      },
-      data: result,
-    };
+    return result;
   }
 }
