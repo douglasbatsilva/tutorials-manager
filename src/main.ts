@@ -17,6 +17,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Users And Tutorials')
     .setDescription('SGA Backend Tech Test')
+    .addBearerAuth({ type: 'http', in: 'header' })
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
