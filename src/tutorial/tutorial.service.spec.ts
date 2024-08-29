@@ -6,15 +6,17 @@ import { TutorialQuery, TutorialRegisterDTO } from './dto/tutorial.dto';
 import { IFindResult } from 'src/infra/database/tutorial.interface';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { createHash } from 'crypto';
 
 const testQuery: TutorialQuery = {
   title: 'Test Title',
-  createdAt: new Date('2024-08-28'),
-};
-
-const updatedAtTestQuery: TutorialQuery = {
-  title: 'Test Title',
-  updatedAt: new Date('2024-08-28'),
+  start: new Date('2024-08-28'),
+  end: new Date('2024-08-29'),
+  dateField: 'createdAt',
+  order: 'asc',
+  getHash: function (): string {
+    return createHash('sha1').update(JSON.stringify(this)).digest('hex');
+  },
 };
 
 const testTutorial: IFindResult = {
@@ -82,22 +84,6 @@ describe('TutorialService', () => {
       );
 
       const result = await service.findAll(testQuery);
-
-      expect(result).toEqual(testTutorial);
-      expect(tutorialRepositoryMock.find).toHaveBeenCalled();
-      expect(tutorialRepositoryMock.count).toHaveBeenCalled();
-    });
-
-    it('should return finded tutorials by date of update', async () => {
-      (tutorialRepositoryMock.find as jest.Mock).mockResolvedValue(
-        testTutorial.data,
-      );
-
-      (tutorialRepositoryMock.count as jest.Mock).mockResolvedValue(
-        testTutorial.metadata.total,
-      );
-
-      const result = await service.findAll(updatedAtTestQuery);
 
       expect(result).toEqual(testTutorial);
       expect(tutorialRepositoryMock.find).toHaveBeenCalled();
