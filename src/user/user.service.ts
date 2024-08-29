@@ -55,13 +55,19 @@ export class UserService {
     const user = await this.findByEmailOrName(body.email, body.userName);
 
     if (!user?.length) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        'Invalid User or Password',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const hash = createHash('sha1').update(body.password).digest('hex');
 
     if (hash !== user[0].password) {
-      throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        'Invalid User or Password',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     return this.jwtService.sign({ id: user[0]._id });

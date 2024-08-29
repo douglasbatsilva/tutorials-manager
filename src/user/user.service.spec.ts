@@ -92,7 +92,10 @@ describe('UserService', () => {
 
       const body = { email: validUser.email, password: validUser.password };
 
-      const result = new HttpException('User not found', HttpStatus.NOT_FOUND);
+      const result = new HttpException(
+        'Invalid User or Password',
+        HttpStatus.UNAUTHORIZED,
+      );
 
       await expect(service.login(body)).rejects.toThrow(result);
     });
@@ -108,7 +111,7 @@ describe('UserService', () => {
       const body = { email: validUser.email, password: 'wrongpassword' };
 
       const result = new HttpException(
-        'Invalid password',
+        'Invalid User or Password',
         HttpStatus.UNAUTHORIZED,
       );
 
