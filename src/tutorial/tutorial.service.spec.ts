@@ -107,26 +107,35 @@ describe('TutorialService', () => {
 
   describe('create', () => {
     it('should create a new tutorial if it does not exist', async () => {
-      (tutorialRepositoryMock.find as jest.Mock).mockResolvedValue([]);
+      (tutorialRepositoryMock.create as jest.Mock).mockResolvedValue(
+        validTutorial,
+      );
 
-      await service.create(validTutorial);
+      const result = await service.create(validTutorial);
 
       expect(tutorialRepositoryMock.create).toHaveBeenCalledWith({
         _id: expect.any(String),
         ...validTutorial,
       });
+
+      expect(result).toEqual(validTutorial);
     });
 
     it('should throw an exception if the tutorial already exists', async () => {
-      (tutorialRepositoryMock.find as jest.Mock).mockResolvedValue([
-        validTutorial,
-      ]);
+      const errorMessage = 'Tutorial already exists';
+
+      (tutorialRepositoryMock.create as jest.Mock).mockRejectedValue(
+        new HttpException(errorMessage, HttpStatus.PRECONDITION_FAILED),
+      );
+
+      await expect(service.create(validTutorial)).rejects.toThrow(errorMessage);
 
       await expect(service.create(validTutorial)).rejects.toThrow(
-        new HttpException(
-          'Tutorial already exists',
-          HttpStatus.PRECONDITION_FAILED,
-        ),
+        HttpException,
+      );
+
+      await expect(service.create(validTutorial)).rejects.toThrow(
+        new HttpException(errorMessage, HttpStatus.PRECONDITION_FAILED),
       );
     });
   });
