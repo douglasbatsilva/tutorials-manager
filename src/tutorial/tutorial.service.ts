@@ -61,22 +61,20 @@ export class TutorialService {
   }
 
   async create(body: TutorialRegisterDTO): Promise<Tutorials> {
-    const filter = { $or: [{ title: body.title }, { data: body.data }] };
+    try {
+      const data: TutorialDTO = { _id: randomUUID(), ...body };
 
-    const tutorials = await this.repository.find({ filter });
+      const resp = await this.repository.create(data);
 
-    if (tutorials?.length > 0) {
+      this.invalidateCache();
+
+      return resp;
+    } catch {
       throw new HttpException(
         'Tutorial already exists',
         HttpStatus.PRECONDITION_FAILED,
       );
     }
-
-    const data: TutorialDTO = { _id: randomUUID(), ...body };
-
-    this.invalidateCache();
-
-    return this.repository.create(data);
   }
 
   async update(
